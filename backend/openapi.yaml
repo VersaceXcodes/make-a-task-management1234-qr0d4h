@@ -1,0 +1,305 @@
+openapi: 3.0.0
+info:
+  title: TaskMaster Backend API
+  description: >
+    This API powers TaskMaster's task management and collaboration features. It
+    supports CRUD operations for tasks, projects, users, and real-time WebSocket
+    events for seamless collaboration.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Development server
+tags:
+  - name: Authentication
+    description: Endpoints for user authentication and management
+  - name: Users
+    description: Endpoints for managing users and roles
+  - name: Tasks
+    description: Endpoints for managing tasks
+  - name: Projects
+    description: Endpoints for managing projects
+  - name: Notifications
+    description: Endpoints for managing user notifications
+  - name: Realtime Events
+    description: WebSocket events for real-time collaboration
+paths:
+  /api/users:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      description: Creates a new user in the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email (unique and required)
+                password:
+                  type: string
+                  format: password
+                  description: User password (hashed in backend)
+                name:
+                  type: string
+                  description: User name (optional)
+                role:
+                  type: string
+                  description: User role (optional, defaults to "member")
+                  default: member
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    description: Unique identifier for the user
+                  email:
+                    type: string
+                    description: User email
+                  name:
+                    type: string
+                    description: User name
+                  role:
+                    type: string
+                    description: User role
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the user was created
+        "400":
+          description: Invalid input or missing required fields
+    get:
+      summary: Get user details
+      tags:
+        - Authentication
+      description: |
+        Retrieves user details. Requires a valid JWT token.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    description: Unique identifier for the user
+                  email:
+                    type: string
+                    description: User email
+                  name:
+                    type: string
+                    description: User name
+                  role:
+                    type: string
+                    description: User role
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the user was created
+        "401":
+          description: Unauthorized
+  /api/tasks:
+    get:
+      summary: Get tasks
+      tags:
+        - Tasks
+      description: Retrieves tasks based on filters such as status, priority, or due date
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            description: Task status to filter by (e.g., "todo", "in progress")
+        - name: priority
+          in: query
+          schema:
+            type: string
+            description: Task priority to filter by (e.g., "low", "high")
+        - name: due_date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Task due date to filter by
+      responses:
+        "200":
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: Unique identifier for the task
+                        title:
+                          type: string
+                          description: Task title
+                        description:
+                          type: string
+                          description: Task description
+                        status:
+                          type: string
+                          description: Task status
+                        priority:
+                          type: string
+                          description: Task priority
+                        due_date:
+                          type: string
+                          format: date
+                          description: Task due date
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: Timestamp when the task was created
+        "400":
+          description: Invalid query parameters
+        "401":
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create a new task
+      tags:
+        - Tasks
+      description: Creates a new task associated with a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Task title (required)
+                description:
+                  type: string
+                  description: Task description (optional)
+                priority:
+                  type: string
+                  description: Task priority (optional, defaults to "low")
+                  default: low
+                due_date:
+                  type: string
+                  format: date
+                  description: Task due date (optional)
+                assigned_to:
+                  type: string
+                  description: User ID to assign the task to (optional)
+                parent_task_id:
+                  type: string
+                  description: Parent task ID for subtasks (optional)
+      responses:
+        "201":
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                    description: Unique identifier for the task
+                  title:
+                    type: string
+                    description: Task title
+                  description:
+                    type: string
+                    description: Task description
+                  status:
+                    type: string
+                    description: Task status
+                  priority:
+                    type: string
+                    description: Task priority
+                  due_date:
+                    type: string
+                    format: date
+                    description: Task due date
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the task was created
+        "400":
+          description: Invalid input or missing required fields
+        "401":
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+  /api/websocket:
+    post:
+      summary: Real-time task update
+      tags:
+        - Realtime Events
+      description: Sends a WebSocket event to update a task's details (e.g., status,
+        priority)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_id:
+                  type: string
+                  description: Task ID to update
+                updates:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      description: Updated task status
+                    priority:
+                      type: string
+                      description: Updated task priority
+                    assigned_to:
+                      type: string
+                      description: User ID for task reassignment
+      responses:
+        "200":
+          description: Task update event processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmation message
+                  updatedFields:
+                    type: object
+                    description: Updated fields in the task
+        "400":
+          description: Invalid input or missing required fields
+        "401":
+          description: Unauthorized
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT authentication required for secure operations. The token must be
+        included in the HTTP Authorization header as a Bearer token.

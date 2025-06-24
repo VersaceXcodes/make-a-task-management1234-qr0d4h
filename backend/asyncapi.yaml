@@ -1,0 +1,188 @@
+asyncapi: 2.3.0
+info:
+  title: TaskMaster Realtime API
+  version: 1.0.0
+  description: >
+    This AsyncAPI document defines the real-time events for the TaskMaster
+    application, focusing on WebSocket communication for task updates, comments,
+    and other collaborative features.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  development:
+    url: ws://localhost:3000/ws
+    protocol: ws
+    description: Development server for real-time communication.
+channels:
+  task/updated:
+    description: This channel notifies about updates to tasks such as status
+      changes, priority updates, or assignment changes.
+    publish:
+      operationId: publishTaskUpdated
+      summary: Notify about a task update
+      description: Publishes an event when a task is updated.
+      tags:
+        - name: Task
+          description: Task-related events
+      message:
+        name: TaskUpdated
+        title: Task Updated Event
+        summary: Event fired when a task is updated.
+        description: >
+          This event is triggered when any property of a task is updated, such
+          as status, priority, or assignment.
+        payload:
+          type: object
+          properties:
+            taskId:
+              type: string
+              description: The unique identifier of the task that was updated.
+            updates:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - todo
+                    - in_progress
+                    - done
+                  description: The updated status of the task.
+                priority:
+                  type: string
+                  enum:
+                    - low
+                    - medium
+                    - high
+                  description: The updated priority of the task.
+                assignedTo:
+                  type: string
+                  description: The user ID of the new assignee (optional).
+            timestamp:
+              type: string
+              format: date-time
+              description: The timestamp when the update occurred.
+  task/comment/added:
+    description: This channel notifies when a new comment is added to a task.
+    publish:
+      operationId: publishTaskCommentAdded
+      summary: Notify about a new comment on a task
+      description: Publishes an event when a comment is added to a task.
+      tags:
+        - name: Comment
+          description: Comment-related events
+      message:
+        name: TaskCommentAdded
+        title: Task Comment Added Event
+        summary: Event fired when a new comment is added to a task.
+        description: |
+          This event is triggered when a new comment is added to a task.
+        payload:
+          type: object
+          properties:
+            taskId:
+              type: string
+              description: The unique identifier of the task receiving the comment.
+            commentId:
+              type: string
+              description: The unique identifier of the new comment.
+            content:
+              type: string
+              description: The content of the comment.
+            createdBy:
+              type: string
+              description: The user ID of the person who added the comment.
+            timestamp:
+              type: string
+              format: date-time
+              description: The timestamp when the comment was created.
+  task/deleted:
+    description: This channel notifies when a task is deleted.
+    publish:
+      operationId: publishTaskDeleted
+      summary: Notify about a task deletion
+      description: Publishes an event when a task is deleted.
+      tags:
+        - name: Task
+          description: Task-related events
+      message:
+        name: TaskDeleted
+        title: Task Deleted Event
+        summary: Event fired when a task is deleted.
+        description: |
+          This event is triggered when a task is removed.
+        payload:
+          type: object
+          properties:
+            taskId:
+              type: string
+              description: The unique identifier of the deleted task.
+            timestamp:
+              type: string
+              format: date-time
+              description: The timestamp when the deletion occurred.
+  project/task/assigned:
+    description: This channel notifies when a task is assigned to a user.
+    publish:
+      operationId: publishTaskAssigned
+      summary: Notify about task assignment
+      description: Publishes an event when a task is assigned to a user.
+      tags:
+        - name: Task Assignment
+          description: Task assignment-related events
+      message:
+        name: TaskAssigned
+        title: Task Assigned Event
+        summary: Event fired when a task is assigned.
+        description: |
+          This event is triggered when a task is assigned to a user.
+        payload:
+          type: object
+          properties:
+            taskId:
+              type: string
+              description: The unique identifier of the assigned task.
+            assignedTo:
+              type: string
+              description: The user ID of the new assignee.
+            timestamp:
+              type: string
+              format: date-time
+              description: The timestamp when the assignment occurred.
+  user/mention:
+    description: This channel notifies users when they are mentioned in a comment or
+      task description.
+    publish:
+      operationId: publishUserMention
+      summary: Notify about a user mention
+      description: Publishes an event when a user is mentioned.
+      tags:
+        - name: Mention
+          description: User mention-related events
+      message:
+        name: UserMention
+        title: User Mention Event
+        summary: Event fired when a user is mentioned.
+        description: >
+          This event is triggered when a user is mentioned in a comment or task
+          description.
+        payload:
+          type: object
+          properties:
+            taskId:
+              type: string
+              description: The unique identifier of the task containing the mention.
+            commentId:
+              type: string
+              description: The unique identifier of the comment containing the mention
+                (optional).
+            mentionedById:
+              type: string
+              description: The user ID of the person who mentioned.
+            mentionedBy:
+              type: string
+              description: The user ID of the person who was mentioned.
+            timestamp:
+              type: string
+              format: date-time
+              description: The timestamp when the mention occurred.
